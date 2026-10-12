@@ -1,6 +1,6 @@
 import prisma from "../config/prisma.js";
 
-// Permission middleware factory
+// Permission middleware 
 // Usage: router.post("/", authMiddleware, requirePermission("user.create"), controller)
 const requirePermission = (permissionCode) => {
   return async (req, res, next) => {

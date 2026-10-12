@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 
+
 // Authentication middleware
 // Reads JWT from HttpOnly cookie, verifies it, and sets req.userId
 const authMiddleware = (req, res, next) => {

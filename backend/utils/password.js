@@ -1,5 +1,6 @@
 import crypto from "crypto";
 
+
 export const hashPassword = async (password) => {
   const salt = crypto.randomBytes(16);
   const hash = await new Promise((resolve, reject) => {
