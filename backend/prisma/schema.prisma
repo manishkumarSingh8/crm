@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id             String   @id @default(uuid()) @db.VarChar(36)
+  name           String
+  email          String   @unique
+  passwordHash   String
+  passwordEncrypted String? @db.Text
+  phoneNumber    String?  @unique
+  roleName       String   @db.VarChar(50)
+  status         String   @default("ACTIVE")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // One User has exactly one Role (direct foreign key)
+  roleId String?
+  role   Role? @relation(fields: [roleId], references: [id], onDelete: SetNull)
+
+  // Audit: who created/updated this user (self-relation)
+  createdById String?
+  createdBy   User?   @relation("User_createdBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedById String?
+  updatedBy   User?   @relation("User_updatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  createdUsers User[] @relation("User_createdBy")
+  updatedUsers User[] @relation("User_updatedBy")
+
+  // Reverse relation from the new direct role FK
+  auditLogs AuditLog[]
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.VarChar(36)
+  name        String   @unique
+  description String?
+
+  // One-to-many: one Role has many Users
+  users User[]
+
+  // Many-to-many: one Role has many Permissions
+  rolePermissions RolePermission[]
+}
+
+model Permission {
+  id       Int    @id @default(autoincrement())
+  code     String @unique
+  name     String
+  module   String
+  action   String
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  id           Int @id @default(autoincrement())
+  roleId       String @db.VarChar(36)
+  permissionId Int
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+// Audit log: tracks which user performed which action
+// userId is nullable so audit history is preserved even if the user is later deleted
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  userId      String?
+  action      String
+  module      String
+  description String?
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+// Vendor table preserved (was dropped by an earlier migration, recreated safely)
+model Vendor {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  status    String   @default("DRAFT")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
